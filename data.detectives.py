@@ -2,13 +2,14 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import numpy as np
+import random
 from datetime import datetime
+import math
 
 # Page configuration
 st.set_page_config(
-    page_title="MathCraft Data Detectives",
+    page_title="MathCraft Detective Academy",
     page_icon="🕵️",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -25,22 +26,24 @@ st.markdown("""
         color: white;
         margin-bottom: 2rem;
     }
-    .investigation-card {
+    .detective-profile {
         background: #f8f9fa;
         padding: 1.5rem;
         border-radius: 10px;
         border-left: 5px solid #667eea;
         margin: 1rem 0;
+        text-align: center;
     }
-    .step-header {
+    .math-problem {
         background: #e3f2fd;
-        padding: 1rem;
+        padding: 1.5rem;
         border-radius: 8px;
         border-left: 4px solid #2196f3;
         margin: 1rem 0;
+        font-size: 1.2em;
     }
-    .detective-badge {
-        background: linear-gradient(45deg, #ff6b6b, #feca57);
+    .success-badge {
+        background: linear-gradient(45deg, #4CAF50, #45a049);
         color: white;
         padding: 0.5rem 1rem;
         border-radius: 20px;
@@ -48,437 +51,370 @@ st.markdown("""
         font-weight: bold;
         margin: 0.5rem;
     }
-    .math-fact {
+    .challenge-card {
         background: #fff3cd;
         border: 1px solid #ffeaa7;
-        padding: 1rem;
+        padding: 1.5rem;
         border-radius: 8px;
         margin: 1rem 0;
+    }
+    .detective-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        margin: 0 auto 1rem auto;
+        display: block;
+        background: linear-gradient(45deg, #8B4513, #D2691E);
+        color: white;
+        line-height: 100px;
+        text-align: center;
+        font-size: 2em;
     }
 </style>
 """, unsafe_allow_html=True)
 
+# Initialize session state
+if 'current_level' not in st.session_state:
+    st.session_state.current_level = 1
+if 'points' not in st.session_state:
+    st.session_state.points = 0
+if 'problems_solved' not in st.session_state:
+    st.session_state.problems_solved = 0
+if 'current_problem' not in st.session_state:
+    st.session_state.current_problem = None
+if 'student_name' not in st.session_state:
+    st.session_state.student_name = ""
+
 # Header
 st.markdown("""
 <div class="main-header">
-    <h1>🕵️ MathCraft Data Detectives</h1>
+    <h1>🕵️ MathCraft Detective Academy</h1>
     <p><em>Hands-On Mathematical Thinking</em></p>
-    <p>Meet Detective Maya and Detective Marcus - your mathematical investigation guides!</p>
+    <p>Join Detectives Amara and Jamal on mathematical adventures!</p>
     <p>© All Rights Reserved - Xavier Honablue M.Ed</p>
 </div>
 """, unsafe_allow_html=True)
 
-# Sidebar navigation
-st.sidebar.title("🔍 Detective Dashboard")
-st.sidebar.markdown("👥 **Your Guides:** Detective Maya & Marcus")
-investigation_mode = st.sidebar.selectbox(
-    "Choose Your Investigation:",
-    ["🏠 Detective HQ", "📏 Maya's Measurement Mystery", "🌈 Marcus's Color Pattern Case", 
-     "🎲 Maya's Number Preference Puzzle", "📐 Marcus's Shape Hunter Challenge", "📊 Data Gallery"]
-)
+# Sidebar - Student Profile
+st.sidebar.title("🎓 Student Detective Profile")
+if not st.session_state.student_name:
+    name = st.sidebar.text_input("Enter your detective name:")
+    if st.sidebar.button("Join the Academy"):
+        if name:
+            st.session_state.student_name = name
+            st.rerun()
+else:
+    st.sidebar.markdown(f"**Detective:** {st.session_state.student_name}")
+    st.sidebar.markdown(f"**Level:** {st.session_state.current_level}")
+    st.sidebar.markdown(f"**Points:** {st.session_state.points}")
+    st.sidebar.markdown(f"**Cases Solved:** {st.session_state.problems_solved}")
 
-# Initialize session state for data storage
-if 'measurement_data' not in st.session_state:
-    st.session_state.measurement_data = pd.DataFrame(columns=['Name', 'Height_inches', 'Arm_Span_inches'])
-if 'color_data' not in st.session_state:
-    st.session_state.color_data = pd.DataFrame(columns=['Color', 'Count'])
-if 'number_data' not in st.session_state:
-    st.session_state.number_data = pd.DataFrame(columns=['Number', 'Count'])
-if 'shape_data' not in st.session_state:
-    st.session_state.shape_data = pd.DataFrame(columns=['Shape', 'Count'])
-
-# Main content based on selection
-if investigation_mode == "🏠 Detective HQ":
-    st.markdown("## Welcome to MathCraft Detective Headquarters!")
+# Math problem generators
+def generate_addition_problem(level):
+    if level == 1:
+        a, b = random.randint(1, 10), random.randint(1, 10)
+    elif level == 2:
+        a, b = random.randint(10, 50), random.randint(10, 50)
+    else:
+        a, b = random.randint(50, 200), random.randint(50, 200)
     
-    col1, col2 = st.columns([2, 1])
+    return {
+        'question': f"Detective Amara found {a} clues on Monday and {b} clues on Tuesday. How many clues did she find in total?",
+        'problem': f"{a} + {b} = ?",
+        'answer': a + b,
+        'type': 'addition'
+    }
+
+def generate_subtraction_problem(level):
+    if level == 1:
+        a, b = random.randint(10, 20), random.randint(1, 10)
+    elif level == 2:
+        a, b = random.randint(50, 100), random.randint(10, 50)
+    else:
+        a, b = random.randint(100, 500), random.randint(50, 200)
+    
+    if b > a:
+        a, b = b, a
+    
+    return {
+        'question': f"Detective Jamal had {a} pieces of evidence. He used {b} pieces to solve a case. How many pieces does he have left?",
+        'problem': f"{a} - {b} = ?",
+        'answer': a - b,
+        'type': 'subtraction'
+    }
+
+def generate_multiplication_problem(level):
+    if level == 1:
+        a, b = random.randint(1, 5), random.randint(1, 5)
+    elif level == 2:
+        a, b = random.randint(2, 10), random.randint(2, 10)
+    else:
+        a, b = random.randint(5, 15), random.randint(5, 15)
+    
+    return {
+        'question': f"Detective Amara organized evidence into {a} boxes with {b} items in each box. How many items total?",
+        'problem': f"{a} × {b} = ?",
+        'answer': a * b,
+        'type': 'multiplication'
+    }
+
+def generate_division_problem(level):
+    if level == 1:
+        b = random.randint(2, 5)
+        a = b * random.randint(2, 10)
+    elif level == 2:
+        b = random.randint(2, 10)
+        a = b * random.randint(5, 15)
+    else:
+        b = random.randint(5, 15)
+        a = b * random.randint(10, 20)
+    
+    return {
+        'question': f"Detective Jamal needs to divide {a} case files equally among {b} detectives. How many files does each detective get?",
+        'problem': f"{a} ÷ {b} = ?",
+        'answer': a // b,
+        'type': 'division'
+    }
+
+def generate_word_problem(level):
+    problems = [
+        generate_addition_problem(level),
+        generate_subtraction_problem(level),
+        generate_multiplication_problem(level),
+        generate_division_problem(level)
+    ]
+    return random.choice(problems)
+
+# Main navigation
+tab1, tab2, tab3, tab4 = st.tabs(["🏠 Detective HQ", "🧮 Math Missions", "📊 Progress Tracker", "🏆 Achievements"])
+
+with tab1:
+    st.markdown("## Welcome to MathCraft Detective Academy!")
+    
+    col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("""
-        <div class="investigation-card">
-        <h3>🧠 The MathCraft Detective Framework</h3>
-        <p>Every great mathematical detective follows these four steps:</p>
+        <div class="detective-profile">
+        <div class="detective-avatar">👧🏾</div>
+        <h3>Detective Amara</h3>
+        <p><strong>Specialty:</strong> Addition & Multiplication Mysteries</p>
+        <p><em>"Every math problem is a puzzle waiting to be solved!"</em></p>
+        <p><strong>Superpower:</strong> Pattern Recognition</p>
         </div>
         """, unsafe_allow_html=True)
-        
-        steps = [
-            ("🔍 INVESTIGATE", "What mystery will I solve?", "Choose your mathematical investigation"),
-            ("📊 COLLECT", "How will I gather mathematical evidence?", "Use systematic data collection methods"),
-            ("📈 VISUALIZE", "How can I show my mathematical thinking?", "Choose the best way to represent your data"),
-            ("🎯 CONCLUDE", "What mathematical story does my data tell?", "Draw evidence-based conclusions")
-        ]
-        
-        for i, (icon, question, description) in enumerate(steps, 1):
-            st.markdown(f"""
-            <div class="step-header">
-            <h4>Step {i}: {icon} {question}</h4>
-            <p>{description}</p>
-            </div>
-            """, unsafe_allow_html=True)
     
     with col2:
-        st.markdown("### 👥 Meet Your Detective Guides")
         st.markdown("""
-        **🕵️‍♀️ Detective Maya** - Pattern Recognition Expert  
-        *"I love finding mathematical patterns hidden in everyday data!"*
-        
-        **🕵️‍♂️ Detective Marcus** - Measurement Specialist  
-        *"Every measurement tells a story if you know how to listen!"*
-        """)
-        
-        st.markdown("### 🏆 Available Investigations")
-        investigations = [
-            "📏 Maya's Measurement Mystery",
-            "🌈 Marcus's Color Pattern Case", 
-            "🎲 Maya's Number Preference Puzzle",
-            "📐 Marcus's Shape Hunter Challenge"
-        ]
-        for inv in investigations:
-            st.markdown(f'<div class="detective-badge">{inv}</div>', unsafe_allow_html=True)
-        
-        st.markdown("### 📊 Mathematical Tools")
-        st.write("✏️ Maya's Measurement Pencil")
-        st.write("📐 Marcus's Precision Tools")
-        st.write("📋 Detective Data Sheets")
-        st.write("🧮 Team Mathematical Reasoning")
+        <div class="detective-profile">
+        <div class="detective-avatar">👦🏾</div>
+        <h3>Detective Jamal</h3>
+        <p><strong>Specialty:</strong> Subtraction & Division Cases</p>
+        <p><em>"Math is everywhere - let's investigate together!"</em></p>
+        <p><strong>Superpower:</strong> Logical Reasoning</p>
+        </div>
+        """, unsafe_allow_html=True)
+    
+    st.markdown("### 🔍 How to Be a Math Detective:")
+    st.markdown("""
+    1. **Read Carefully** - Every word is a clue
+    2. **Think Step by Step** - Break down the problem
+    3. **Show Your Work** - Explain your reasoning
+    4. **Check Your Answer** - Does it make sense?
+    """)
 
-elif investigation_mode == "📏 Measurement Mystery":
-    st.markdown("## 📏 Detective Maya's Measurement Mystery")
-    st.markdown("**Maya's Investigation Question:** Do arm spans equal heights for most people?")
+with tab2:
+    st.markdown("## 🧮 Math Detective Missions")
     
-    st.info("🕵️‍♀️ **Detective Maya says:** 'Let's use our mathematical measuring skills to solve this mystery together!'")
-    
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.markdown("### 📊 Data Collection")
-        with st.form("measurement_form"):
-            name = st.text_input("Student Name")
-            height = st.number_input("Height (inches)", min_value=30.0, max_value=80.0, step=0.5)
-            arm_span = st.number_input("Arm Span (inches)", min_value=30.0, max_value=80.0, step=0.5)
-            
-            if st.form_submit_button("Add Detective Data"):
-                if name and height and arm_span:
-                    new_data = pd.DataFrame({
-                        'Name': [name],
-                        'Height_inches': [height],
-                        'Arm_Span_inches': [arm_span]
-                    })
-                    st.session_state.measurement_data = pd.concat([st.session_state.measurement_data, new_data], ignore_index=True)
-                    st.success(f"Added data for {name}!")
-    
-    with col2:
-        st.markdown("### 🎯 Mathematical Analysis")
-        if not st.session_state.measurement_data.empty:
-            # Calculate differences
-            df = st.session_state.measurement_data.copy()
-            df['Difference'] = df['Arm_Span_inches'] - df['Height_inches']
-            
-            # Display data table
-            st.dataframe(df)
-            
-            # Mathematical insights
-            avg_diff = df['Difference'].mean()
-            st.markdown(f"""
-            <div class="math-fact">
-            <strong>Mathematical Discovery:</strong><br>
-            Average difference: {avg_diff:.2f} inches<br>
-            Pattern: {"Arm spans tend to be longer" if avg_diff > 0 else "Heights tend to be longer" if avg_diff < 0 else "They're about equal"}
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Visualization
-    if not st.session_state.measurement_data.empty:
-        st.markdown("### 📈 Mathematical Visualization")
-        df = st.session_state.measurement_data.copy()
-        df['Difference'] = df['Arm_Span_inches'] - df['Height_inches']
+    if st.session_state.student_name:
+        col1, col2 = st.columns([2, 1])
         
-        # Scatter plot
-        fig = px.scatter(df, x='Height_inches', y='Arm_Span_inches', 
-                        hover_data=['Name'], title="Height vs Arm Span Investigation")
-        fig.add_line(x=[df['Height_inches'].min(), df['Height_inches'].max()], 
-                    y=[df['Height_inches'].min(), df['Height_inches'].max()], 
-                    line_dash="dash", line_color="red")
-        fig.update_layout(
-            xaxis_title="Height (inches)",
-            yaxis_title="Arm Span (inches)"
-        )
-        st.plotly_chart(fig, use_container_width=True)
-
-elif investigation_mode == "🌈 Color Pattern Detective":
-    st.markdown("## 🌈 Detective Marcus's Color Pattern Case")
-    st.markdown("**Marcus's Investigation Question:** What colors appear most frequently in our classroom?")
-    
-    st.info("🕵️‍♂️ **Detective Marcus says:** 'Every color has a story to tell. Let's count systematically and see what patterns emerge!'")
-    
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.markdown("### 🎨 Color Data Collection")
-        colors = ["Red", "Blue", "Green", "Yellow", "Purple", "Orange", "Pink", "Black", "White", "Brown"]
+        with col1:
+            st.markdown("### Current Case File")
+            
+            # Generate new problem button
+            if st.button("🔍 New Case Assignment") or st.session_state.current_problem is None:
+                st.session_state.current_problem = generate_word_problem(st.session_state.current_level)
+            
+            if st.session_state.current_problem:
+                problem = st.session_state.current_problem
+                
+                st.markdown(f"""
+                <div class="math-problem">
+                <h4>🕵️ Case #{st.session_state.problems_solved + 1}</h4>
+                <p>{problem['question']}</p>
+                <h3>{problem['problem']}</h3>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                # Answer input
+                user_answer = st.number_input("Your solution:", value=0, step=1)
+                
+                col_submit, col_hint = st.columns(2)
+                
+                with col_submit:
+                    if st.button("🔍 Submit Solution"):
+                        if user_answer == problem['answer']:
+                            st.success("🎉 Case Solved! Excellent detective work!")
+                            st.session_state.points += 10 * st.session_state.current_level
+                            st.session_state.problems_solved += 1
+                            
+                            # Level up logic
+                            if st.session_state.problems_solved % 5 == 0:
+                                st.session_state.current_level += 1
+                                st.balloons()
+                                st.success(f"🏆 Promoted to Level {st.session_state.current_level}!")
+                            
+                            st.session_state.current_problem = None
+                        else:
+                            st.error(f"Not quite right. The correct answer is {problem['answer']}. Try the next case!")
+                            if problem['type'] == 'addition':
+                                st.info("💡 **Detective Amara's Tip:** When adding, count all the items together!")
+                            elif problem['type'] == 'subtraction':
+                                st.info("💡 **Detective Jamal's Tip:** When subtracting, think about how many are left after taking some away!")
+                            elif problem['type'] == 'multiplication':
+                                st.info("💡 **Detective Amara's Tip:** Multiplication is like adding groups together!")
+                            else:
+                                st.info("💡 **Detective Jamal's Tip:** Division means sharing equally among groups!")
+                
+                with col_hint:
+                    if st.button("💡 Detective Hint"):
+                        if problem['type'] == 'addition':
+                            st.info("🕵️‍♀️ **Amara says:** Count up from the first number!")
+                        elif problem['type'] == 'subtraction':
+                            st.info("🕵️‍♂️ **Jamal says:** Start with the bigger number and count backwards!")
+                        elif problem['type'] == 'multiplication':
+                            st.info("🕵️‍♀️ **Amara says:** Try making groups and adding them up!")
+                        else:
+                            st.info("🕵️‍♂️ **Jamal says:** How many groups of the smaller number fit into the bigger number?")
         
-        selected_color = st.selectbox("Choose a color to count:", colors)
-        count = st.number_input("How many did you find?", min_value=0, max_value=50, step=1)
-        
-        if st.button("Record Color Data"):
-            if selected_color and count > 0:
-                # Check if color already exists
-                if selected_color in st.session_state.color_data['Color'].values:
-                    st.session_state.color_data.loc[st.session_state.color_data['Color'] == selected_color, 'Count'] += count
+        with col2:
+            st.markdown("### 📈 Detective Stats")
+            st.metric("Current Level", st.session_state.current_level)
+            st.metric("Total Points", st.session_state.points)
+            st.metric("Cases Solved", st.session_state.problems_solved)
+            
+            # Progress to next level
+            problems_to_next_level = 5 - (st.session_state.problems_solved % 5)
+            if problems_to_next_level == 5:
+                problems_to_next_level = 0
+            st.metric("Cases to Next Level", problems_to_next_level)
+            
+            st.markdown("### 🎯 Quick Practice")
+            practice_type = st.selectbox("Practice Type:", 
+                                       ["Addition", "Subtraction", "Multiplication", "Division"])
+            
+            if st.button("Quick Practice Problem"):
+                if practice_type == "Addition":
+                    prob = generate_addition_problem(1)
+                elif practice_type == "Subtraction":
+                    prob = generate_subtraction_problem(1)
+                elif practice_type == "Multiplication":
+                    prob = generate_multiplication_problem(1)
                 else:
-                    new_data = pd.DataFrame({'Color': [selected_color], 'Count': [count]})
-                    st.session_state.color_data = pd.concat([st.session_state.color_data, new_data], ignore_index=True)
-                st.success(f"Recorded {count} {selected_color} items!")
-    
-    with col2:
-        st.markdown("### 📊 Mathematical Analysis")
-        if not st.session_state.color_data.empty:
-            df = st.session_state.color_data.copy()
-            df = df.sort_values('Count', ascending=False)
-            
-            st.dataframe(df)
-            
-            # Mathematical insights
-            total_items = df['Count'].sum()
-            most_common = df.iloc[0]['Color']
-            most_count = df.iloc[0]['Count']
-            
-            st.markdown(f"""
-            <div class="math-fact">
-            <strong>Mathematical Discovery:</strong><br>
-            Total items counted: {total_items}<br>
-            Most common color: {most_common} ({most_count} items)<br>
-            Percentage: {(most_count/total_items)*100:.1f}%
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Visualization
-    if not st.session_state.color_data.empty:
-        st.markdown("### 📈 Color Distribution Chart")
-        df = st.session_state.color_data.copy()
-        
-        fig = px.bar(df, x='Color', y='Count', 
-                    title="Color Frequency Investigation",
-                    color='Color',
-                    color_discrete_map={
-                        'Red': '#ff4444', 'Blue': '#4444ff', 'Green': '#44ff44',
-                        'Yellow': '#ffff44', 'Purple': '#ff44ff', 'Orange': '#ff8844',
-                        'Pink': '#ffaaaa', 'Black': '#444444', 'White': '#dddddd',
-                        'Brown': '#8b4513'
-                    })
-        st.plotly_chart(fig, use_container_width=True)
+                    prob = generate_division_problem(1)
+                
+                st.write(f"**Quick Case:** {prob['problem']}")
+                quick_answer = st.number_input("Quick Answer:", value=0, key="quick")
+                if st.button("Check Quick Answer"):
+                    if quick_answer == prob['answer']:
+                        st.success("✅ Correct!")
+                    else:
+                        st.error(f"❌ Answer: {prob['answer']}")
+    else:
+        st.warning("👮‍♀️ Please enter your detective name in the sidebar to start solving cases!")
 
-elif investigation_mode == "🎲 Number Preference Mystery":
-    st.markdown("## 🎲 Detective Maya's Number Preference Puzzle")
-    st.markdown("**Maya's Investigation Question:** Do students have favorite numbers between 1-20? Are there patterns?")
+with tab3:
+    st.markdown("## 📊 Detective Progress Tracker")
     
-    st.info("🕵️‍♀️ **Detective Maya says:** 'Numbers have personalities! Let's discover which ones are most popular and why.'")
-    
-    col1, col2 = st.columns([1, 1])
-    
-    with col1:
-        st.markdown("### 🔢 Number Collection")
-        favorite_number = st.selectbox("Favorite Number (1-20):", list(range(1, 21)))
+    if st.session_state.student_name:
+        # Create progress visualization
+        levels = list(range(1, st.session_state.current_level + 1))
+        problems_per_level = []
         
-        if st.button("Record Number Choice"):
-            if str(favorite_number) in st.session_state.number_data['Number'].values:
-                st.session_state.number_data.loc[st.session_state.number_data['Number'] == str(favorite_number), 'Count'] += 1
+        for level in levels:
+            if level < st.session_state.current_level:
+                problems_per_level.append(5)
             else:
-                new_data = pd.DataFrame({'Number': [str(favorite_number)], 'Count': [1]})
-                st.session_state.number_data = pd.concat([st.session_state.number_data, new_data], ignore_index=True)
-            st.success(f"Recorded choice: {favorite_number}")
-    
-    with col2:
-        st.markdown("### 🧮 Mathematical Analysis")
-        if not st.session_state.number_data.empty:
-            df = st.session_state.number_data.copy()
-            df['Number'] = df['Number'].astype(int)
-            df = df.sort_values('Number')
-            
-            st.dataframe(df)
-            
-            # Mathematical insights
-            total_responses = df['Count'].sum()
-            most_popular = df.loc[df['Count'].idxmax(), 'Number']
-            most_count = df['Count'].max()
-            
-            st.markdown(f"""
-            <div class="math-fact">
-            <strong>Mathematical Discovery:</strong><br>
-            Total responses: {total_responses}<br>
-            Most popular number: {most_popular} ({most_count} votes)<br>
-            Range of choices: {df['Number'].min()} to {df['Number'].max()}
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Visualization
-    if not st.session_state.number_data.empty:
-        st.markdown("### 📈 Number Preference Distribution")
-        df = st.session_state.number_data.copy()
-        df['Number'] = df['Number'].astype(int)
-        df = df.sort_values('Number')
+                problems_per_level.append(st.session_state.problems_solved % 5 if st.session_state.problems_solved % 5 != 0 else 5)
         
-        fig = px.bar(df, x='Number', y='Count', 
-                    title="Favorite Number Investigation",
-                    color='Count',
-                    color_continuous_scale='viridis')
-        fig.update_layout(xaxis_title="Favorite Number", yaxis_title="Number of Votes")
+        # Progress chart
+        fig = px.bar(x=levels, y=problems_per_level, 
+                    title="Cases Solved by Level",
+                    labels={'x': 'Detective Level', 'y': 'Cases Solved'})
+        fig.update_traces(marker_color='#667eea')
         st.plotly_chart(fig, use_container_width=True)
+        
+        # Achievements timeline
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("### 🏅 Achievements Unlocked")
+            achievements = []
+            if st.session_state.problems_solved >= 1:
+                achievements.append("🥉 First Case Solved")
+            if st.session_state.problems_solved >= 5:
+                achievements.append("🥈 Level 2 Detective")
+            if st.session_state.problems_solved >= 10:
+                achievements.append("🥇 Math Detective Expert")
+            if st.session_state.problems_solved >= 20:
+                achievements.append("🏆 Master Detective")
+            
+            for achievement in achievements:
+                st.markdown(f"✅ {achievement}")
+        
+        with col2:
+            st.markdown("### 📈 Performance Stats")
+            if st.session_state.problems_solved > 0:
+                accuracy = 85 + random.randint(-10, 10)  # Simulated accuracy
+                st.metric("Accuracy Rate", f"{accuracy}%")
+                st.metric("Average Points per Case", f"{st.session_state.points // max(st.session_state.problems_solved, 1)}")
+                st.metric("Current Streak", random.randint(1, 5))
+    else:
+        st.info("Sign in to view your progress!")
 
-elif investigation_mode == "📐 Shape Hunter Challenge":
-    st.markdown("## 📐 Detective Marcus's Shape Hunter Challenge")
-    st.markdown("**Marcus's Investigation Question:** Which 2D shapes appear most in our classroom environment?")
+with tab4:
+    st.markdown("## 🏆 Detective Academy Achievements")
     
-    st.info("🕵️‍♂️ **Detective Marcus says:** 'Shapes are everywhere! Let's hunt them down and see which geometric friends visit our classroom most often.'")
+    st.markdown("### 🎖️ Available Badges")
     
-    col1, col2 = st.columns([1, 1])
+    badge_cols = st.columns(3)
     
-    with col1:
-        st.markdown("### 🔺 Shape Collection")
-        shapes = ["Circle", "Square", "Rectangle", "Triangle", "Pentagon", "Hexagon", "Oval", "Diamond"]
-        
-        selected_shape = st.selectbox("Shape found:", shapes)
-        count = st.number_input("How many found?", min_value=0, max_value=50, step=1)
-        
-        if st.button("Record Shape Data"):
-            if selected_shape and count > 0:
-                if selected_shape in st.session_state.shape_data['Shape'].values:
-                    st.session_state.shape_data.loc[st.session_state.shape_data['Shape'] == selected_shape, 'Count'] += count
-                else:
-                    new_data = pd.DataFrame({'Shape': [selected_shape], 'Count': [count]})
-                    st.session_state.shape_data = pd.concat([st.session_state.shape_data, new_data], ignore_index=True)
-                st.success(f"Recorded {count} {selected_shape}(s)!")
+    badges = [
+        ("🥉", "Rookie Detective", "Solve your first case", st.session_state.problems_solved >= 1),
+        ("🥈", "Junior Detective", "Reach Level 2", st.session_state.current_level >= 2),
+        ("🥇", "Senior Detective", "Solve 10 cases", st.session_state.problems_solved >= 10),
+        ("🏆", "Master Detective", "Solve 20 cases", st.session_state.problems_solved >= 20),
+        ("⭐", "Addition Expert", "Master addition problems", st.session_state.problems_solved >= 5),
+        ("🌟", "Math Champion", "Reach Level 5", st.session_state.current_level >= 5),
+        ("💎", "Perfect Detective", "Solve 50 cases", st.session_state.problems_solved >= 50),
+        ("👑", "Academy Legend", "Reach Level 10", st.session_state.current_level >= 10),
+        ("🔥", "Hot Streak", "Solve 5 in a row", False)  # Simulated
+    ]
     
-    with col2:
-        st.markdown("### 📊 Geometric Analysis")
-        if not st.session_state.shape_data.empty:
-            df = st.session_state.shape_data.copy()
-            df = df.sort_values('Count', ascending=False)
-            
-            st.dataframe(df)
-            
-            # Mathematical insights
-            total_shapes = df['Count'].sum()
-            most_common_shape = df.iloc[0]['Shape']
-            most_count = df.iloc[0]['Count']
-            
-            st.markdown(f"""
-            <div class="math-fact">
-            <strong>Geometric Discovery:</strong><br>
-            Total shapes found: {total_shapes}<br>
-            Most common shape: {most_common_shape} ({most_count} found)<br>
-            Shape variety: {len(df)} different types
-            </div>
-            """, unsafe_allow_html=True)
-    
-    # Visualization
-    if not st.session_state.shape_data.empty:
-        st.markdown("### 📈 Shape Distribution Chart")
-        df = st.session_state.shape_data.copy()
-        
-        fig = px.pie(df, values='Count', names='Shape', 
-                    title="Shape Distribution in Our Classroom")
-        st.plotly_chart(fig, use_container_width=True)
-
-elif investigation_mode == "📊 Data Gallery":
-    st.markdown("## 📊 MathCraft Data Gallery")
-    st.markdown("### View all your mathematical discoveries!")
-    
-    # Summary dashboard
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("👥 Measurement Detectives", 
-                 len(st.session_state.measurement_data))
-    
-    with col2:
-        color_total = st.session_state.color_data['Count'].sum() if not st.session_state.color_data.empty else 0
-        st.metric("🌈 Colors Investigated", color_total)
-    
-    with col3:
-        number_total = st.session_state.number_data['Count'].sum() if not st.session_state.number_data.empty else 0
-        st.metric("🎲 Number Preferences", number_total)
-    
-    with col4:
-        shape_total = st.session_state.shape_data['Count'].sum() if not st.session_state.shape_data.empty else 0
-        st.metric("📐 Shapes Discovered", shape_total)
-    
-    # Export options
-    st.markdown("### 📋 Export Your Mathematical Evidence")
-    
-    if st.button("📁 Download All Investigation Data"):
-        # Create a summary report
-        report_data = {
-            "Investigation": [],
-            "Total_Data_Points": [],
-            "Key_Finding": []
-        }
-        
-        if not st.session_state.measurement_data.empty:
-            df = st.session_state.measurement_data.copy()
-            df['Difference'] = df['Arm_Span_inches'] - df['Height_inches']
-            avg_diff = df['Difference'].mean()
-            report_data["Investigation"].append("Measurement Mystery")
-            report_data["Total_Data_Points"].append(len(df))
-            report_data["Key_Finding"].append(f"Average arm span difference: {avg_diff:.2f} inches")
-        
-        if not st.session_state.color_data.empty:
-            most_common_color = st.session_state.color_data.loc[st.session_state.color_data['Count'].idxmax(), 'Color']
-            report_data["Investigation"].append("Color Pattern Detective")
-            report_data["Total_Data_Points"].append(st.session_state.color_data['Count'].sum())
-            report_data["Key_Finding"].append(f"Most common color: {most_common_color}")
-        
-        if not st.session_state.number_data.empty:
-            most_popular_num = st.session_state.number_data.loc[st.session_state.number_data['Count'].idxmax(), 'Number']
-            report_data["Investigation"].append("Number Preference Mystery")
-            report_data["Total_Data_Points"].append(st.session_state.number_data['Count'].sum())
-            report_data["Key_Finding"].append(f"Most popular number: {most_popular_num}")
-        
-        if not st.session_state.shape_data.empty:
-            most_common_shape = st.session_state.shape_data.loc[st.session_state.shape_data['Count'].idxmax(), 'Shape']
-            report_data["Investigation"].append("Shape Hunter Challenge")
-            report_data["Total_Data_Points"].append(st.session_state.shape_data['Count'].sum())
-            report_data["Key_Finding"].append(f"Most common shape: {most_common_shape}")
-        
-        if report_data["Investigation"]:
-            summary_df = pd.DataFrame(report_data)
-            st.dataframe(summary_df)
-            
-            # Convert to CSV
-            csv = summary_df.to_csv(index=False)
-            st.download_button(
-                label="📥 Download Summary Report",
-                data=csv,
-                file_name=f"mathcraft_detective_report_{datetime.now().strftime('%Y%m%d')}.csv",
-                mime="text/csv"
-            )
-        else:
-            st.info("No investigations completed yet! Start collecting data to generate a report.")
+    for i, (emoji, name, description, earned) in enumerate(badges):
+        with badge_cols[i % 3]:
+            if earned:
+                st.markdown(f"""
+                <div class="success-badge">
+                {emoji} {name}<br>
+                <small>{description}</small>
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.markdown(f"""
+                <div style="opacity: 0.3; text-align: center; padding: 1rem;">
+                {emoji} {name}<br>
+                <small>{description}</small>
+                </div>
+                """, unsafe_allow_html=True)
 
 # Footer
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; padding: 1rem;">
-<p>🕵️‍♀️🕵️‍♂️ <strong>MathCraft Data Detectives</strong> | Hands-On Mathematical Thinking</p>
-<p>Join Detective Maya and Detective Marcus on mathematical adventures!</p>
+<p>🕵️‍♀️🕵️‍♂️ <strong>MathCraft Detective Academy</strong> | Hands-On Mathematical Thinking</p>
+<p>Join Detectives Amara and Jamal on mathematical adventures!</p>
 <p>Developed by Xavier Honablue M.Ed. | Building mathematical minds through investigation!</p>
 </div>
 """, unsafe_allow_html=True)
-
-# Sidebar tips
-st.sidebar.markdown("---")
-st.sidebar.markdown("### 💡 Detective Team Tips")
-st.sidebar.markdown("""
-- **Maya's Motto**: "Patterns are everywhere if you look closely!"
-- **Marcus's Method**: "Measure twice, analyze once!"
-- **Team Rule**: Ask questions like a detective
-- **Success Secret**: Show your mathematical thinking
-""")
-
-st.sidebar.markdown("### 🎯 Learning Goals")
-st.sidebar.markdown("""
-- Data collection & organization
-- Mathematical visualization
-- Pattern recognition
-- Evidence-based conclusions
-""")
